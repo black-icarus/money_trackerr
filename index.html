@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dompet" />
+  <meta name="description" content="Pencatat keuangan pribadi yang elegan" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Dompet — Keuangan Pribadi</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:        #0a0a0f;
+      --bg2:       #111118;
+      --bg3:       #18181f;
+      --surface:   #1e1e28;
+      --surface2:  #252530;
+      --border:    rgba(255,255,255,0.07);
+      --border2:   rgba(255,255,255,0.12);
+      --text:      #f0f0f5;
+      --text2:     #8888aa;
+      --text3:     #4a4a66;
+      --accent:    #7c6fff;
+      --accent2:   #a99fff;
+      --ok:        #3ddc97;
+      --warn:      #f5c842;
+      --danger:    #ff5a5a;
+      --makan:     #ff7b54;
+      --belanja:   #54a0ff;
+      --fleksibel: #a29bfe;
+      --radius:    18px;
+      --radius-sm: 12px;
+      --shadow:    0 8px 32px rgba(0,0,0,0.5);
+      --font:      'Syne', sans-serif;
+      --mono:      'DM Mono', monospace;
+      --income:    5000000;
+      --safe-top:  env(safe-area-inset-top, 0px);
+      --safe-bot:  env(safe-area-inset-bottom, 0px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { background: var(--bg); }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      background-size: 150px;
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    /* ── GLOW BG ── */
+    .glow-bg {
+      position: fixed; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 600px; z-index: 0;
+      background: radial-gradient(ellipse, rgba(124,111,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── LAYOUT ── */
+    #app {
+      position: relative; z-index: 1;
+      max-width: 430px; margin: 0 auto;
+      padding: calc(var(--safe-top) + 16px) 20px calc(var(--safe-bot) + 100px);
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 8px;
+    }
+    .header-logo {
+      font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-month {
+      font-size: 13px; color: var(--text2); font-family: var(--mono);
+      background: var(--surface); padding: 6px 14px; border-radius: 99px;
+      border: 1px solid var(--border);
+    }
+
+    /* ── BALANCE CARD ── */
+    .balance-card {
+      background: linear-gradient(145deg, #1a1a26 0%, #141420 100%);
+      border: 1px solid var(--border2);
+      border-radius: 24px;
+      padding: 28px 24px 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.08);
+      animation: slideUp 0.4s ease both;
+    }
+    .balance-card::after {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(124,111,255,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .balance-label {
+      font-size: 12px; color: var(--text2); font-family: var(--mono);
+      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .balance-amount {
+      font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
+      line-height: 1;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent2) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .balance-amount.negative { background: linear-gradient(135deg, var(--danger), #ff9a9a); -webkit-background-clip: text; background-clip: text; }
+    .balance-sub {
+      margin-top: 10px; font-size: 13px; color: var(--text2); font-family: var(--mono);
+    }
+    .balance-sub span { color: var(--ok); }
+
+    .balance-stats {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-top: 20px;
+    }
+    .stat-pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+    .stat-pill-label { font-size: 11px; color: var(--text3); font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+    .stat-pill-value { font-size: 15px; font-weight: 700; color: var(--text); margin-top: 4px; font-family: var(--mono); }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 13px; font-weight: 700; color: var(--text2);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::before {
+      content: ''; width: 3px; height: 14px;
+      background: var(--accent);
+      border-radius: 2px; display: block;
+    }
+
+    /* ── PROGRESS CARDS ── */
+    .progress-grid { display: flex; flex-direction: column; gap: 12px; }
+
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      transition: border-color 0.3s, background 0.3s;
+      animation: slideUp 0.4s ease both;
+    }
+    .progress-card.warn  { border-color: rgba(245,200,66,0.25); background: rgba(245,200,66,0.04); }
+    .progress-card.danger { border-color: rgba(255,90,90,0.3); background: rgba(255,90,90,0.05); }
+
+    .progress-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .progress-info { display: flex; align-items: center; gap: 10px; }
+    .progress-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .progress-icon.makan    { background: rgba(255,123,84,0.15); }
+    .progress-icon.belanja  { background: rgba(84,160,255,0.15); }
+    .progress-icon.fleksibel { background: rgba(162,155,254,0.15); }
+    .progress-name { font-size: 15px; font-weight: 700; }
+    .progress-pct  { font-size: 13px; font-family: var(--mono); color: var(--text2); }
+
+    .progress-amounts {
+      display: flex; justify-content: space-between;
+      font-family: var(--mono); font-size: 12px; color: var(--text2);
+      margin-top: 10px;
+    }
+    .progress-amounts .spent { color: var(--text); font-weight: 500; }
+
+    .bar-track {
+      height: 8px; background: rgba(255,255,255,0.07);
+      border-radius: 99px; overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%; border-radius: 99px;
+      transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1), background-color 0.3s;
+      background: var(--ok);
+      position: relative;
+    }
+    .bar-fill::after {
+      content: ''; position: absolute; right: 0; top: 0;
+      width: 4px; height: 100%;
+      background: rgba(255,255,255,0.6);
+      border-radius: 99px;
+    }
+    .bar-fill.warn   { background: var(--warn); }
+    .bar-fill.danger { background: var(--danger); }
+    .bar-fill.makan    { background: linear-gradient(90deg, #e05a2b, var(--makan)); }
+    .bar-fill.belanja  { background: linear-gradient(90deg, #2270cc, var(--belanja)); }
+    .bar-fill.fleksibel{ background: linear-gradient(90deg, #6b5fe8, var(--fleksibel)); }
+    .bar-fill.warn   { background: var(--warn) !important; }
+    .bar-fill.danger { background: var(--danger) !important; }
+
+    /* ── FAB BUTTON ── */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--safe-bot) + 24px);
+      left: 50%; transform: translateX(-50%);
+      z-index: 100;
+      background: linear-gradient(135deg, var(--accent), #a29bfe);
+      border: none; color: white;
+      width: 220px; height: 54px; border-radius: 99px;
+      font-family: var(--font); font-size: 16px; font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(124,111,255,0.45), 0 2px 8px rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      letter-spacing: 0.02em;
+      transition: transform 0.15s, box-shadow 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fab:active { transform: translateX(-50%) scale(0.96); box-shadow: 0 4px 16px rgba(124,111,255,0.35); }
+    .fab-icon { font-size: 20px; }
+
+    /* ── MODAL BACKDROP ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+
+    /* ── MODAL SHEET ── */
+    .modal-sheet {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 28px 28px 0 0;
+      width: 100%; max-width: 430px;
+      padding: 0 24px calc(var(--safe-bot) + 28px);
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.34,1.15,0.64,1);
+      max-height: 92dvh;
+      overflow-y: auto;
+    }
+    .modal-backdrop.open .modal-sheet { transform: translateY(0); }
+
+    .modal-handle {
+      width: 36px; height: 5px; background: var(--surface2);
+      border-radius: 99px; margin: 14px auto 24px;
+    }
+    .modal-title {
+      font-size: 22px; font-weight: 800; margin-bottom: 24px;
+      letter-spacing: -0.5px;
+    }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block; font-size: 12px; font-weight: 700;
+      color: var(--text2); letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 8px; font-family: var(--mono);
+    }
+    .form-input, .form-select {
+      width: 100%; background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text); font-family: var(--font);
+      font-size: 16px; font-weight: 500;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      -webkit-appearance: none; appearance: none;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: var(--accent);
+      background: rgba(124,111,255,0.05);
+    }
+    .form-input::placeholder { color: var(--text3); }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+    .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238888aa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 44px; }
+
+    .category-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    }
+    .cat-btn {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text2); font-family: var(--font);
+      font-size: 13px; font-weight: 700;
+      padding: 12px 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .cat-btn .cat-emoji { font-size: 22px; }
+    .cat-btn.active.makan    { border-color: var(--makan); background: rgba(255,123,84,0.12); color: var(--makan); }
+    .cat-btn.active.belanja  { border-color: var(--belanja); background: rgba(84,160,255,0.12); color: var(--belanja); }
+    .cat-btn.active.fleksibel{ border-color: var(--fleksibel); background: rgba(162,155,254,0.12); color: var(--fleksibel); }
+
+    .form-submit {
+      width: 100%; background: linear-gradient(135deg, var(--accent), #a29bfe);
+      border: none; color: white; font-family: var(--font);
+      font-size: 16px; font-weight: 800; padding: 16px;
+      border-radius: var(--radius-sm); cursor: pointer;
+      letter-spacing: 0.02em; margin-top: 8px;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+      box-shadow: 0 4px 20px rgba(124,111,255,0.35);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .form-submit:active { transform: scale(0.98); }
+    .form-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── TRANSACTIONS ── */
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .tx-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 14px;
+      animation: slideUp 0.3s ease both;
+      position: relative; overflow: hidden;
+    }
+    .tx-item::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+    }
+    .tx-item.makan::before    { background: var(--makan); }
+    .tx-item.belanja::before  { background: var(--belanja); }
+    .tx-item.fleksibel::before { background: var(--fleksibel); }
+
+    .tx-icon {
+      width: 42px; height: 42px; min-width: 42px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .tx-icon.makan    { background: rgba(255,123,84,0.12); }
+    .tx-icon.belanja  { background: rgba(84,160,255,0.12); }
+    .tx-icon.fleksibel{ background: rgba(162,155,254,0.12); }
+
+    .tx-body { flex: 1; min-width: 0; }
+    .tx-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-meta { font-size: 12px; color: var(--text2); font-family: var(--mono); margin-top: 2px; }
+
+    .tx-amount { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text); white-space: nowrap; }
+    .tx-delete {
+      background: none; border: none; color: var(--text3);
+      font-size: 18px; cursor: pointer; padding: 4px;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.2s;
+    }
+    .tx-delete:active { color: var(--danger); }
+
+    .empty-state {
+      text-align: center; padding: 40px 24px;
+      color: var(--text3); font-family: var(--mono); font-size: 14px;
+      background: var(--surface); border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; display: block; opacity: 0.4; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: calc(var(--safe-bot) + 88px);
+      left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--text); border-radius: 99px;
+      padding: 12px 24px; font-size: 14px; font-weight: 600;
+      z-index: 300;
+      opacity: 0; transition: all 0.3s;
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── MONTH NAV ── */
+    .month-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 16px;
+    }
+    .month-nav-btn {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    .month-nav-btn:active { background: var(--accent); border-color: var(--accent); }
+    .month-display { font-size: 15px; font-weight: 700; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
+    }
+
+    .card-animate-1 { animation-delay: 0.05s; }
+    .card-animate-2 { animation-delay: 0.1s; }
+    .card-animate-3 { animation-delay: 0.15s; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 0; }
+  </style>
+</head>
+<body>
+
+<div class="glow-bg"></div>
+
+<div id="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logo">💸 Dompet</div>
+    <div class="header-month" id="headerMonth"></div>
+  </div>
+
+  <!-- MONTH NAVIGATION -->
+  <div class="month-nav">
+    <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
+    <div class="month-display" id="monthDisplay"></div>
+    <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
+  </div>
+
+  <!-- BALANCE CARD -->
+  <div class="balance-card">
+    <div class="balance-label">💰 Sisa Saldo Bulan Ini</div>
+    <div class="balance-amount" id="balanceAmount">Rp 0</div>
+    <div class="balance-sub">dari pemasukan <span>Rp 5.000.000</span></div>
+    <div class="balance-stats">
+      <div class="stat-pill">
+        <div class="stat-pill-label">Terpakai</div>
+        <div class="stat-pill-value" id="statUsed">Rp 0</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-label">Transaksi</div>
+        <div class="stat-pill-value" id="statCount">0 item</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS BARS -->
+  <div class="section-title">Progres Kategori</div>
+  <div class="progress-grid">
+
+    <div class="progress-card card-animate-1" id="card-makan">
+      <div class="progress-header">
+        <div class="progress-info">
+          <div class="progress-icon makan">🍜</div>
+          <div>
+            <div class="progress-name">Makan</div>
+          </div>
+        </div>
+        <div class="progress-pct" id="pct-makan">0%</div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill makan" id="bar-makan" style="width:0%"></div>
+      </div>
+      <div class="progress-amounts">
+        <span class="spent" id="spent-makan">Rp 0</span>
+        <span>maks Rp 1.500.000</span>
+      </div>
+    </div>
+
+    <div class="progress-card card-animate-2" id="card-belanja">
+      <div class="progress-header">
+        <div class="progress-info">
+          <div class="progress-icon belanja">🛒</div>
+          <div>
+            <div class="progress-name">Belanja Bulanan</div>
+          </div>
+        </div>
+        <div class="progress-pct" id="pct-belanja">0%</div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill belanja" id="bar-belanja" style="width:0%"></div>
+      </div>
+      <div class="progress-amounts">
+        <span class="spent" id="spent-belanja">Rp 0</span>
+        <span>maks Rp 1.500.000</span>
+      </div>
+    </div>
+
+    <div class="progress-card card-animate-3" id="card-fleksibel">
+      <div class="progress-header">
+        <div class="progress-info">
+          <div class="progress-icon fleksibel">✨</div>
+          <div>
+            <div class="progress-name">Fleksibel</div>
+          </div>
+        </div>
+        <div class="progress-pct" id="pct-fleksibel">0%</div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill fleksibel" id="bar-fleksibel" style="width:0%"></div>
+      </div>
+      <div class="progress-amounts">
+        <span class="spent" id="spent-fleksibel">Rp 0</span>
+        <span>maks Rp 2.000.000</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TRANSACTIONS -->
+  <div class="section-title">Riwayat Transaksi</div>
+  <div class="tx-list" id="txList">
+    <div class="empty-state">
+      <span class="empty-icon">📭</span>
+      Belum ada transaksi bulan ini.<br/>Ketuk tombol di bawah untuk mulai!
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()">
+  <span class="fab-icon">＋</span> Catat Pengeluaran
+</button>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="handleBackdropClick(event)">
+  <div class="modal-sheet" id="modalSheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ Transaksi Baru</div>
+
+    <div class="form-group">
+      <label class="form-label">Tanggal</label>
+      <input type="date" id="txDate" class="form-input" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nama Pengeluaran</label>
+      <input type="text" id="txName" class="form-input" placeholder="Contoh: Makan siang warteg…" maxlength="60" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nominal (Rp)</label>
+      <input type="text" id="txAmount" class="form-input" placeholder="0" inputmode="numeric" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Kategori</label>
+      <div class="category-grid">
+        <button class="cat-btn" id="cat-makan" onclick="selectCat('makan')">
+          <span class="cat-emoji">🍜</span>
+          Makan
+        </button>
+        <button class="cat-btn" id="cat-belanja" onclick="selectCat('belanja')">
+          <span class="cat-emoji">🛒</span>
+          Belanja
+        </button>
+        <button class="cat-btn" id="cat-fleksibel" onclick="selectCat('fleksibel')">
+          <span class="cat-emoji">✨</span>
+          Fleksibel
+        </button>
+      </div>
+    </div>
+
+    <button class="form-submit" id="submitBtn" onclick="submitTx()" disabled>
+      Simpan Transaksi
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────
+const BUDGET = { makan: 1500000, belanja: 1500000, fleksibel: 2000000 };
+const INCOME = 5000000;
+const EMOJI  = { makan: '🍜', belanja: '🛒', fleksibel: '✨' };
+const CATNAME = { makan: 'Makan', belanja: 'Belanja Bulanan', fleksibel: 'Fleksibel' };
+
+let currentYear, currentMonth, selectedCat = '';
+
+// ─────────────────────────────────────────
+// STORAGE
+// ─────────────────────────────────────────
+function storageKey(y, m) { return `dompet_${y}_${m}`; }
+
+function loadTx(y, m) {
+  try { return JSON.parse(localStorage.getItem(storageKey(y, m))) || []; }
+  catch { return []; }
+}
+
+function saveTx(y, m, list) {
+  localStorage.setItem(storageKey(y, m), JSON.stringify(list));
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+function init() {
+  const now = new Date();
+  currentYear  = now.getFullYear();
+  currentMonth = now.getMonth(); // 0-indexed
+  render();
+}
+
+// ─────────────────────────────────────────
+// MONTH NAV
+// ─────────────────────────────────────────
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+  if (currentMonth > 11) { currentMonth = 0;  currentYear++; }
+  render();
+}
+
+// ─────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────
+function render() {
+  const txs = loadTx(currentYear, currentMonth);
+
+  // Month label
+  const monthNames = ['Januari','Februari','Maret','April','Mei','Juni',
+                      'Juli','Agustus','September','Oktober','November','Desember'];
+  const label = `${monthNames[currentMonth]} ${currentYear}`;
+  document.getElementById('headerMonth').textContent = label;
+  document.getElementById('monthDisplay').textContent = label;
+
+  // Totals per category
+  const totals = { makan: 0, belanja: 0, fleksibel: 0 };
+  txs.forEach(t => totals[t.category] = (totals[t.category] || 0) + t.amount);
+  const totalSpent = Object.values(totals).reduce((a,b) => a+b, 0);
+  const remaining  = INCOME - totalSpent;
+
+  // Balance
+  const balEl = document.getElementById('balanceAmount');
+  balEl.textContent = formatRp(remaining);
+  balEl.className = 'balance-amount' + (remaining < 0 ? ' negative' : '');
+
+  document.getElementById('statUsed').textContent  = formatRp(totalSpent);
+  document.getElementById('statCount').textContent = `${txs.length} item`;
+
+  // Progress bars
+  ['makan','belanja','fleksibel'].forEach(cat => {
+    const spent = totals[cat];
+    const max   = BUDGET[cat];
+    const pct   = Math.min((spent / max) * 100, 120);
+    const status = spent > max ? 'danger' : spent / max >= 0.8 ? 'warn' : '';
+
+    const bar  = document.getElementById(`bar-${cat}`);
+    const card = document.getElementById(`card-${cat}`);
+
+    bar.style.width = Math.min(pct, 100) + '%';
+    bar.className = `bar-fill ${cat} ${status}`;
+    card.className = `progress-card ${status}`;
+
+    document.getElementById(`pct-${cat}`).textContent    = Math.round((spent/max)*100) + '%';
+    document.getElementById(`spent-${cat}`).textContent  = formatRp(spent);
+  });
+
+  // Transaction list
+  renderTxList(txs);
+}
+
+function renderTxList(txs) {
+  const el = document.getElementById('txList');
+  if (!txs.length) {
+    el.innerHTML = `<div class="empty-state"><span class="empty-icon">📭</span>Belum ada transaksi bulan ini.<br/>Ketuk tombol di bawah untuk mulai!</div>`;
+    return;
+  }
+  const sorted = [...txs].sort((a,b) => new Date(b.date) - new Date(a.date));
+  el.innerHTML = sorted.map(t => `
+    <div class="tx-item ${t.category}">
+      <div class="tx-icon ${t.category}">${EMOJI[t.category]}</div>
+      <div class="tx-body">
+        <div class="tx-name">${escHtml(t.name)}</div>
+        <div class="tx-meta">${formatDate(t.date)} · ${CATNAME[t.category]}</div>
+      </div>
+      <div class="tx-amount">−${formatRp(t.amount)}</div>
+      <button class="tx-delete" onclick="deleteTx('${t.id}')" title="Hapus">🗑</button>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────
+// MODAL
+// ─────────────────────────────────────────
+function openModal() {
+  const modal = document.getElementById('modalBackdrop');
+  modal.classList.add('open');
+  // Set today's date
+  const today = new Date();
+  document.getElementById('txDate').value = today.toISOString().split('T')[0];
+  document.getElementById('txName').value   = '';
+  document.getElementById('txAmount').value = '';
+  selectedCat = '';
+  ['makan','belanja','fleksibel'].forEach(c =>
+    document.getElementById(`cat-${c}`).className = 'cat-btn');
+  document.getElementById('submitBtn').disabled = true;
+  setTimeout(() => document.getElementById('txName').focus(), 400);
+}
+
+function closeModal() {
+  document.getElementById('modalBackdrop').classList.remove('open');
+}
+
+function handleBackdropClick(e) {
+  if (e.target === document.getElementById('modalBackdrop')) closeModal();
+}
+
+function selectCat(cat) {
+  selectedCat = cat;
+  ['makan','belanja','fleksibel'].forEach(c => {
+    const btn = document.getElementById(`cat-${c}`);
+    btn.className = `cat-btn${c === cat ? ` active ${c}` : ''}`;
+  });
+  checkForm();
+}
+
+function checkForm() {
+  const name   = document.getElementById('txName').value.trim();
+  const amount = parseAmount(document.getElementById('txAmount').value);
+  document.getElementById('submitBtn').disabled = !(name && amount > 0 && selectedCat);
+}
+
+// Live validation
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('txName').addEventListener('input', checkForm);
+  document.getElementById('txAmount').addEventListener('input', e => {
+    // Format with thousand separators
+    const raw = e.target.value.replace(/\D/g, '');
+    e.target.value = raw ? parseInt(raw).toLocaleString('id-ID') : '';
+    checkForm();
+  });
+});
+
+// ─────────────────────────────────────────
+// SUBMIT
+// ─────────────────────────────────────────
+function submitTx() {
+  const name   = document.getElementById('txName').value.trim();
+  const amount = parseAmount(document.getElementById('txAmount').value);
+  const date   = document.getElementById('txDate').value;
+  if (!name || !amount || !selectedCat || !date) return;
+
+  const txs = loadTx(currentYear, currentMonth);
+  txs.push({ id: Date.now().toString(36), name, amount, category: selectedCat, date });
+  saveTx(currentYear, currentMonth, txs);
+
+  closeModal();
+  render();
+  showToast(`✅ ${name} — ${formatRp(amount)} disimpan!`);
+}
+
+// ─────────────────────────────────────────
+// DELETE
+// ─────────────────────────────────────────
+function deleteTx(id) {
+  const txs = loadTx(currentYear, currentMonth).filter(t => t.id !== id);
+  saveTx(currentYear, currentMonth, txs);
+  render();
+  showToast('🗑️ Transaksi dihapus');
+}
+
+// ─────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────
+function formatRp(n) {
+  return 'Rp ' + Math.abs(n).toLocaleString('id-ID');
+}
+
+function parseAmount(str) {
+  return parseInt((str || '').replace(/\D/g, '')) || 0;
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// Swipe-down to close modal
+let startY = 0;
+document.getElementById('modalSheet').addEventListener('touchstart', e => {
+  startY = e.touches[0].clientY;
+}, { passive: true });
+document.getElementById('modalSheet').addEventListener('touchend', e => {
+  if (e.changedTouches[0].clientY - startY > 80) closeModal();
+}, { passive: true });
+
+// ─────────────────────────────────────────
+// PWA SW REGISTER
+// ─────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ─────────────────────────────────────────
+// START
+// ─────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
