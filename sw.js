@@ -1,5 +1,5 @@
 // ── Dompet PWA Service Worker ──────────────────────────
-const CACHE_NAME = 'dompet-v1';
+const CACHE_NAME = 'dompet-v2';
 const ASSETS = [
   '/',
   '/index.html',
